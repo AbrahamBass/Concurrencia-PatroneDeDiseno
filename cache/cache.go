@@ -15,14 +15,14 @@ func ExpresiveFibonacci(n int) int {
 type Service struct {
 	InProgress map[int]bool
 	IsPending  map[int][]chan int
-	Lock       sync.Mutex
+	Lock       sync.RWMutex
 }
 
 func (s *Service) Work(job int) {
-	s.Lock.Lock()
+	s.Lock.RLock()
 	exist := s.InProgress[job]
 	if exist {
-		s.Lock.Unlock()
+		s.Lock.RUnlock()
 		response := make(chan int)
 		defer close(response)
 
@@ -33,7 +33,7 @@ func (s *Service) Work(job int) {
 		resp := <-response
 		fmt.Printf("Response Done: %v", resp)
 	}
-	s.Lock.Unlock()
+	s.Lock.RUnlock()
 
 	s.Lock.Lock()
 	s.InProgress[job] = true
@@ -42,9 +42,9 @@ func (s *Service) Work(job int) {
 	fmt.Printf("Calculate Fibonacci %v\n", job)
 	result := ExpresiveFibonacci(job)
 
-	s.Lock.Lock()
+	s.Lock.RLock()
 	pendingsWorkers, exists := s.IsPending[job]
-	s.Lock.Unlock()
+	s.Lock.RUnlock()
 
 	if exists {
 		for _, worker := range pendingsWorkers {
