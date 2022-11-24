@@ -16,6 +16,7 @@ func Fibonacci(n int) int {
 type Memory struct {
 	f     Function
 	cache map[int]FunctionResult
+	m sync.Mutex
 }
 
 type Function func(key int) (interface{}, error)
@@ -33,11 +34,15 @@ func NewCache(f Function) *Memory {
 }
 
 func (m *Memory) Get(key int) (interface{}, error) {
+	m.m.Lock()
 	result, exists := m.cache[key]
+	m.m.Unlock()
 
 	if !exists {
+		m.m.Lock()
 		result.value, result.err = m.f(key)
 		m.cache[key] = result
+		m.m.Unlock()
 	}
 	return result.value, result.err
 }
